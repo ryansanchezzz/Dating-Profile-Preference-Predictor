@@ -25,7 +25,7 @@ from PIL import Image
 # SETTINGS
 # ============================
 ZIP_FILE = "/content/drive/My Drive/profile_235.zip"  # zipped profiles folder in Drive
-EXTRACT_FOLDER = "./profiles"                   
+EXTRACT_FOLDER = "./profiles"
 TRAIN_FOLDER = "./profiles_train"
 TEST_FOLDER = "./profiles_test"
 TRAIN_RATIO = 0.8  # 80% train, 20% test
@@ -54,7 +54,7 @@ all_profiles = [f for f in os.listdir(EXTRACT_FOLDER)
                 if os.path.isdir(os.path.join(EXTRACT_FOLDER, f)) and not f.startswith(".")]
 
 # shuffle
-random.seed(42)  
+random.seed(42)
 random.shuffle(all_profiles)
 
 # split
@@ -161,7 +161,7 @@ class ProfileDataset(torch.utils.data.Dataset):
 
         images = torch.stack(images)
 
-        # read label 
+        # read label
         label = None
         for file_name in ["label.txt", "rating.txt"]:
             file_path = os.path.join(path, file_name)
@@ -214,52 +214,9 @@ testloader = torch.utils.data.DataLoader(
 print("Dataset and DataLoaders ready!")
 
 
-def __getitem__(self, idx):
-    folder = self.folders[idx]
-    path = os.path.join(self.root, folder)
-
-    # sort images to keep order consistent
-    img_files = sorted([fname for fname in os.listdir(path)
-                        if fname.lower().endswith((".jpg", ".png"))])[:6]
-
-    images = []
-    for img_file in img_files:
-        img_path = os.path.join(path, img_file)
-        img = Image.open(img_path).convert('RGB')
-        if self.transform:
-            img = self.transform(img)
-        images.append(img)
-
-    images = torch.stack(images)
-
-    # load label from label.txt or rating.txt
-    label = None
-    for file_name in ["label.txt", "rating.txt"]:
-        file_path = os.path.join(path, file_name)
-        if os.path.exists(file_path):
-            with open(file_path, "r", encoding="utf-8-sig") as f:
-                content = f.read().strip().lower()
-                content = content.replace("\n", "").replace("\r", "").strip()
-
-                # map text to integer
-                if content in ["like", "1"]:
-                    label = 1
-                elif content in ["dislike", "0"]:
-                    label = 0
-                else:
-                    # try parsing int
-                    try:
-                        label = int(content)
-                    except ValueError:
-                        raise ValueError(f"Invalid label in {file_path}: {repr(content)}")
-            break
-
-    if label is None:
-        raise ValueError(f"No label or rating found for profile {folder}")
-
-    return images, torch.tensor(label, dtype=torch.long)
-
-
+# ============================
+# Model definition
+# ============================
 from torchvision import models
 
 class Net(nn.Module):
@@ -298,6 +255,9 @@ for param in net.backbone.parameters():
     param.requires_grad = False
 print(net)
 
+# ============================
+# Loss & Optimizer
+# ============================
 import torch.optim as optim
 
 criterion = nn.CrossEntropyLoss()
@@ -306,6 +266,9 @@ optimizer = optim.Adam(net.classifier.parameters(), lr=0.001)
 
 
 
+# ============================
+# Training loop with early stopping
+# ============================
 import torch
 import copy
 import math
@@ -315,9 +278,9 @@ num_epochs = 2000
 patience = 50
 min_delta = 0.0
 save_path = 'best_profile_net.pth'
-monitor = 'val_acc'  
+monitor = 'val_acc'
 
-best_metric = -math.inf      
+best_metric = -math.inf
 best_epoch = -1
 epochs_no_improve = 0
 
@@ -361,12 +324,12 @@ for epoch in range(num_epochs):
 
         running_loss += loss.item() * labels.size(0)
 
-    train_loss = running_loss / len(trainset)  
-    val_loss, val_acc = evaluate(net, testloader, device) 
+    train_loss = running_loss / len(trainset)
+    val_loss, val_acc = evaluate(net, testloader, device)
 
     print(f"Epoch {epoch+1}: train_loss={train_loss:.4f}  val_loss={val_loss:.4f}  val_acc={val_acc:.4f}")
 
- 
+
     if val_acc - best_metric > min_delta:
         best_metric = val_acc
         best_epoch = epoch
@@ -389,9 +352,15 @@ print("Loaded best model from", save_path)
 
 You can save your trained model using:
 
+# ============================
+# Save Model
+# ============================
 PATH = './profile_net (1).pth'
 torch.save(net.state_dict(), PATH)
 
+# ============================
+# Accuracy Measurement
+# ============================
 net = Net()
 net.load_state_dict(torch.load(PATH))
 
@@ -408,7 +377,7 @@ print(total)
 print(f"Test Accuracy: {100 * correct / total:.2f}%")
 
 # ============================
-# Grad Cam Visualization of training profile
+# Grad Cam Visualization of Training Profile
 # ============================
 import torch
 import torch.nn.functional as F
