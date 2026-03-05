@@ -21,5 +21,21 @@ ___Dataset___
 
 Train/Test split: 80% / 20% by default.
 
+The dataset was not uploaded to the github due to file size restrictions. The data was formatted like below:
+profiles/
+├── profile_001/
+│   ├── 1.jpg
+│   ├── 2.jpg
+│   ├── 3.jpg
+│   ├── 4.jpg
+│   ├── 5.jpg
+│   ├── 6.jpg
+│   └── label.txt
+├── profile_002/
+│   ├── ...
+│   └── rating.txt
+└── ...
+
+
 ___Dependencies___
 pip install -r requirements.txt
